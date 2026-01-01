@@ -6,6 +6,12 @@ def get_related_posts_count(tag):
     return tag.posts.count()
 
 
+def get_likes_count(post):
+    """Вычислить количество лайков у поста"""
+
+    return post.likes.count()
+
+
 def serialize_post(post):
     return {
         'title': post.title,
@@ -37,6 +43,11 @@ def index(request):
     tags = Tag.objects.all()
     popular_tags = sorted(tags, key=get_related_posts_count)
     most_popular_tags = popular_tags[-5:]
+
+    popular_likes = sorted(fresh_posts, key=get_likes_count)
+    most_popular_likes = popular_likes[-5:]
+    for likes in most_popular_likes:
+        most_popular_posts.append(likes)
 
     context = {
         'most_popular_posts': [
