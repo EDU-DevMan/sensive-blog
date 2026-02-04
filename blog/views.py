@@ -7,7 +7,7 @@ def get_related_posts_count(tag):
     return tag.posts.count()
 
 
-def get_likes_count(post):
+def get_likes_count(post):  # Не будем использовать, не забыть убрать!
     """Вычислить количество лайков у поста"""
 
     return post.likes__count
@@ -45,9 +45,15 @@ def index(request):
     popular_tags = sorted(tags, key=get_related_posts_count)
     most_popular_tags = popular_tags[-5:]
 
-    popular_likes = sorted(fresh_posts.annotate(Count("likes")),
-                           key=get_likes_count)
-    most_popular_likes = popular_likes[-5:]
+    # popular_likes = sorted(fresh_posts.annotate(Count("likes")),
+    #                        key=get_likes_count)
+    # most_popular_likes = popular_likes[-5:]
+    # for likes in most_popular_likes:
+    #     most_popular_posts.append(likes)
+
+    popular_likes = fresh_posts.annotate(Count("likes"))
+    most_popular_likes = popular_likes.order_by("-likes__count")[:5]
+
     for likes in most_popular_likes:
         most_popular_posts.append(likes)
 
