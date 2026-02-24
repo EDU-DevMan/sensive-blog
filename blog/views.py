@@ -10,7 +10,7 @@ def get_related_posts_count(tag):
 def get_likes_count(post):
     """Вычислить количество лайков у поста"""
 
-    return post.comments__count
+    return post.comments_count
 
 
 def serialize_post(post):
@@ -52,21 +52,26 @@ def index(request):
 
     most_popular_posts = []  # TODO. Как это посчитать?
 
-    fresh_posts = Post.objects.order_by('published_at').annotate(
-        Count('likes', distinct=True),
-        Count('comments', distinct=True)
-        )
-    fresh_related_posts = fresh_posts.prefetch_related("author")
-    most_fresh_posts = list(fresh_related_posts)[-5:]
-
     tags = Tag.objects.all()
     popular_tags = tags.annotate(Count("title"))
     most_popular_tags = popular_tags.order_by("title")[:5]
 
-    most_popular_likes = fresh_related_posts.order_by("-likes__count")[:5]
+    fresh_posts = Post.objects.annotate(
+        likes_count=Count('likes')).prefetch_related("author").order_by('-likes_count')[:5]
+    fresh_posts_ids = [post.id for post in fresh_posts]
 
-    for likes in most_popular_likes:
-        most_popular_posts.append(likes)
+    posts_with_comments = Post.objects.order_by('published_at').annotate(
+        comments_count=Count('comments')).prefetch_related("author")
+
+    most_fresh_posts = list(posts_with_comments)[-5:]
+
+    ids_and_comments = posts_with_comments.filter(
+        id__in=fresh_posts_ids).values_list('id', 'comments_count')
+    count_for_id = dict(ids_and_comments)
+
+    for post in fresh_posts:
+        post.comments_count = count_for_id[post.id]
+        most_popular_posts.append(post)
 
     context = {
         'most_popular_posts': [
