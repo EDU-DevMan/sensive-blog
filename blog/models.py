@@ -11,7 +11,9 @@ class PostQuerySet(models.QuerySet):
         """ Функция сортирует посты по популярности """
 
         return self.annotate(
-            likes_count=Count('likes')).order_by('-likes_count')
+            likes_count=Count('likes')).order_by('-likes_count') \
+                                       .select_related('author') \
+                                       .prefetch_related("tags")
 
     # Стало меньше когда во views.py
     def fetch_with_comments_count(self):
@@ -22,6 +24,14 @@ class PostQuerySet(models.QuerySet):
             post.comments_count = post.id
 
         return posts
+
+    def most_posts(self):
+        """ Функция заранее подгружает посты с атрибутами """
+
+        return self.select_related('author') \
+                   .prefetch_related("tags") \
+                   .order_by('-published_at') \
+                   .annotate(comments_count=Count('comments'))
 
 
 class Post(models.Model):
