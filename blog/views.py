@@ -96,8 +96,6 @@ def post_detail(request, slug):
                                      .prefetch_related("tags") \
                                      .fetch_with_comments_count()[:5]
 
-    # likes = post.likes.all()
-
     serialized_comments = Comment.objects.prefetch_related('author') \
                                          .filter(post=post)
 
@@ -133,12 +131,16 @@ def tag_filter(request, tag_title):
                                      .prefetch_related("tags") \
                                      .fetch_with_comments_count()[:5]
 
-    related_posts = tag.posts.all()[:20]
+    related_posts = Post.objects.filter(tags=tag) \
+                                .order_by('-published_at') \
+                                .select_related('author') \
+                                .prefetch_related("tags") \
+                                .annotate(comments_count=Count('comments'))[:20]
 
     context = {
         'tag': tag.title,
-        'popular_tags': [serialize_tag(tag) for tag in most_popular_tags],
-        'posts': [serialize_post(post) for post in related_posts],
+        'popular_tags': [serialize_tag_optimized(tag) for tag in most_popular_tags],
+        'posts': [serialize_post_optimized(post) for post in related_posts],
         'most_popular_posts': [
             serialize_post_optimized(post) for post in most_popular_posts
         ],
