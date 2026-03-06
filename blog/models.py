@@ -17,7 +17,7 @@ class PostQuerySet(models.QuerySet):
 
     def fetch_with_comments_count(self):
         """ Возвращает список постов вместо QuerySet.
-         Работает гибче, может применяться там, где понадобится 
+         Работает гибче, может применяться там, где понадобится
          annotate по комментариям  """
 
         most_popular_posts_ids = [post.id for post in self]
@@ -39,7 +39,6 @@ class PostQuerySet(models.QuerySet):
 
         return self.select_related('author') \
                    .prefetch_related("tags") \
-                   .order_by('-published_at') \
                    .annotate(comments_count=Count('comments'))
 
 
