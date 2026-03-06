@@ -15,15 +15,24 @@ class PostQuerySet(models.QuerySet):
                                        .select_related('author') \
                                        .prefetch_related("tags")
 
-    # Стало меньше когда во views.py
     def fetch_with_comments_count(self):
-        """ Функция позволяет присоединить комментарии к посту """
+        """ Возвращает список постов вместо QuerySet.
+         Работает гибче, может применяться там, где понадобится 
+         annotate по комментариям  """
 
-        posts = list(self.popular())
-        for post in posts:
-            post.comments_count = post.id
+        most_popular_posts_ids = [post.id for post in self]
+        posts_with_comments = Post.objects \
+                                  .filter(id__in=most_popular_posts_ids) \
+                                  .annotate(comments_count=Count('comments'))
 
-        return posts
+        ids_and_comments = posts_with_comments.values_list('id',
+                                                           'comments_count')
+        count_for_id = dict(ids_and_comments)
+
+        for post in self:
+            post.comments_count = count_for_id[post.id]
+
+        return list(self)
 
     def most_posts(self):
         """ Функция заранее подгружает посты с атрибутами """
